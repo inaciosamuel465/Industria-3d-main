@@ -5,6 +5,7 @@ import { Machine, Sector, FactoryRoute } from '../../types/industrial';
 import { FactorySceneBuilder } from './FactorySceneBuilder';
 import { FactoryMiniMap } from './FactoryMiniMap';
 import { calculateCorridorPath } from '../../utils/corridorRouter';
+import { FactoryModelLoader } from '../../utils/FactoryModelLoader';
 import {
   Compass,
   Maximize2,
@@ -241,6 +242,9 @@ export const FactoryCanvas: React.FC<FactoryCanvasProps> = ({
   useEffect(() => {
     if (!containerRef.current || !canvasRef.current) return;
 
+    // Asynchronously preload Kenney 3D models in background
+    FactoryModelLoader.preloadCommonModels();
+
     const width = containerRef.current.clientWidth;
     const height = containerRef.current.clientHeight;
 
@@ -255,16 +259,16 @@ export const FactoryCanvas: React.FC<FactoryCanvasProps> = ({
     camera.position.set(0, 1.68, 18);
     cameraRef.current = camera;
 
-    // 3. WebGL Renderer
+    // 3. WebGL Renderer (Optimized for 60+ FPS high-performance rendering)
     const renderer = new THREE.WebGLRenderer({
       canvas: canvasRef.current,
       antialias: true,
       powerPreference: 'high-performance'
     });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     rendererRef.current = renderer;
 
     // 4. OrbitControls (only enabled when perspective === 'orbit')
@@ -297,8 +301,8 @@ export const FactoryCanvas: React.FC<FactoryCanvasProps> = ({
     const sunLight = new THREE.DirectionalLight(0xffffff, 1.4);
     sunLight.position.set(30, 45, 25);
     sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 2048;
-    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.mapSize.width = 1024;
+    sunLight.shadow.mapSize.height = 1024;
     sunLight.shadow.camera.near = 0.5;
     sunLight.shadow.camera.far = 130;
     sunLight.shadow.camera.left = -40;
@@ -318,6 +322,7 @@ export const FactoryCanvas: React.FC<FactoryCanvasProps> = ({
     // 7. Raycaster for clicking machines and Click-to-Walk
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
+    let lastRaycastTime = 0;
 
     // Click-to-Walk destination marker mesh
     const clickWaypointGeo = new THREE.RingGeometry(0.35, 0.55, 32);
@@ -360,10 +365,15 @@ export const FactoryCanvas: React.FC<FactoryCanvasProps> = ({
         );
       }
 
-      // Check hover on machines
-      if (!isPointerDraggingRef.current) {
+      // Check hover on machines (Throttled & targeted strictly to machine meshes to prevent CPU stall)
+      const now = performance.now();
+      if (!isPointerDraggingRef.current && now - lastRaycastTime > 40) {
+        lastRaycastTime = now;
         raycaster.setFromCamera(mouse, camera);
-        const intersects = raycaster.intersectObjects(scene.children, true);
+        const machineTargets = builderRef.current
+          ? Array.from(builderRef.current.objectsMap.machineMeshes.values())
+          : [];
+        const intersects = raycaster.intersectObjects(machineTargets, true);
 
         let foundMachine: Machine | null = null;
         for (const hit of intersects) {
@@ -382,7 +392,7 @@ export const FactoryCanvas: React.FC<FactoryCanvasProps> = ({
           if (foundMachine) break;
         }
 
-        setHoveredMachine(foundMachine);
+        setHoveredMachine((prev) => (prev?.id === foundMachine?.id ? prev : foundMachine));
         if (foundMachine) {
           setTooltipPos({ x: event.clientX, y: event.clientY });
           renderer.domElement.style.cursor = 'pointer';

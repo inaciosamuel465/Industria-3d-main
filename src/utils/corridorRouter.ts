@@ -20,6 +20,7 @@ const CORRIDOR_SEGMENTS: CorridorSegment[] = [
   // 2. Vertical Aisles (North-South)
   { p1: { x: 0, z: -32.0 }, p2: { x: 0, z: 32.0 }, type: 'vertical' },         // Central Main Aisle
   { p1: { x: -23.0, z: -7.0 }, p2: { x: -23.0, z: 9.0 }, type: 'vertical' },   // Aisle between Rosca & Zincagem
+  { p1: { x: -23.0, z: 9.0 }, p2: { x: -23.0, z: 32.0 }, type: 'vertical' },   // Aisle between Ferramentaria & Furação
   { p1: { x: 21.0, z: 9.0 }, p2: { x: 21.0, z: 32.0 }, type: 'vertical' }      // Aisle between Bihler & Embalagem
 ];
 
@@ -32,6 +33,7 @@ const JUNCTIONS: Point2D[] = [
 
   { x: -23.0, z: -7.0 }, // West Aisle x North Cross
   { x: -23.0, z: 9.0 },  // West Aisle x South Cross
+  { x: -23.0, z: 32.0 }, // West South Aisle Terminal
 
   { x: 21.0, z: 9.0 },   // East Aisle x South Cross
   { x: 21.0, z: 32.0 },  // East Aisle x South Connector

@@ -8,7 +8,9 @@ export type SectorId =
   | 'usinagem'
   | 'ferramentaria'
   | 'bihler-producao'
-  | 'embalagem-expedicao';
+  | 'embalagem-expedicao'
+  | 'furacao-industrial'
+  | 'cnc-usinagem-avancada';
 
 export interface Sector {
   id: SectorId;
@@ -32,10 +34,12 @@ export type MachineCategory =
   | 'laminadora-rosca'
   | 'linha-zincagem'
   | 'cnc-usinagem'
+  | 'cnc-centro-usinagem'
   | 'ferramentaria-retifica'
   | 'bihler-linha-pecas'
   | 'embalagem-seladora'
-  | 'embalagem-paletizadora';
+  | 'embalagem-paletizadora'
+  | 'furadeira-coluna';
 
 export interface MachineTelemetry {
   temperature: number; // °C
